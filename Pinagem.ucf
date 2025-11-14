@@ -1,0 +1,48 @@
+#==============================================================
+# Arquivo de Constraints (.ucf) para a placa Spartan-3A/3AN
+# Baseado no manual UG334
+#==============================================================
+
+# --- Clock Principal ---
+# Oscilador on-board de 50 MHz [cite: 1021, 1050, 1074]
+NET "CLK" LOC = "E12" | IOSTANDARD = LVCMOS33;
+NET "CLK" PERIOD = 20.0ns HIGH 50%; # Define a frequência de 50MHz [cite: 1078]
+
+# --- Reset (Push-button) ---
+# Usando BTN_SOUTH (Botão Sul) como reset [cite: 801]
+# Requer PULLDOWN interno, pois o botão joga para 3.3V (nível alto) [cite: 807, 832]
+NET "rst" LOC = "T15" | IOSTANDARD = LVCMOS33 | PULLDOWN;
+
+# --- Teclado PS/2 (Conexão Primária) ---
+# O manual exige PULLUP interno para as portas PS/2 [cite: 2142]
+NET "ps2c" LOC = "W12" | IOSTANDARD = LVCMOS33 | PULLUP; # PS2_CLK1 [cite: 2128, 2135, 2408]
+NET "ps2d" LOC = "V11" | IOSTANDARD = LVCMOS33 | PULLUP; # PS2_DATA1 [cite: 2121, 2135, 2412]
+
+# --- Display LCD (Interface de 8 bits) ---
+# Pinos de dados do LCD [cite: 1268, 1312, 1316]
+NET "LCD_DB<7>" LOC = "Y15"  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "LCD_DB<6>" LOC = "AB16" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "LCD_DB<5>" LOC = "Y16"  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "LCD_DB<4>" LOC = "AA12" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "LCD_DB<3>" LOC = "AB12" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "LCD_DB<2>" LOC = "AB17" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "LCD_DB<1>" LOC = "AB18" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "LCD_DB<0>" LOC = "Y13"  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+
+# Pinos de controle do LCD [cite: 1268, 1283, 1289, 1292]
+NET "RS"        LOC = "Y14"  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # Nome da porta no VHDL: RS -> Pino LCD_RS
+NET "RW"        LOC = "W13"  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # Nome da porta no VHDL: RW -> Pino LCD_RW
+
+# PINO CRÍTICO: Mapeia a porta LCD_E (que você deve renomear no VHDL)
+NET "LCD_E"     LOC = "AB4"  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # Pino LCD_E [cite: 1268]
+
+# --- LEDs de Debug (Saída 'tecla') ---
+# Mapeando a saída 'tecla(7:0)' para os 8 LEDs discretos [cite: 913-920, 942-961]
+NET "tecla<7>" LOC = "W21" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # LED7
+NET "tecla<6>" LOC = "Y22" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # LED6
+NET "tecla<5>" LOC = "V20" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # LED5
+NET "tecla<4>" LOC = "V19" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # LED4
+NET "tecla<3>" LOC = "U19" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # LED3
+NET "tecla<2>" LOC = "U20" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # LED2
+NET "tecla<1>" LOC = "T19" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # LED1
+NET "tecla<0>" LOC = "R20" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # LED0
