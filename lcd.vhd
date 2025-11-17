@@ -1,12 +1,3 @@
------------------------------------------------------------------- 
--- lcd.vhd -- general LCD testing program 
------------------------------------------------------------------- 
--- Author -- Dan Pederson, 2004 
--- -- Barron Barnett, 2004 
--- -- Jacob Beck, 2006 
------------------------------------------------------------------- 
-
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL; 
@@ -136,29 +127,45 @@ leitura: kb_code PORT MAP (CLK, rst, ps2d, ps2c, rd_key_code, key_read,
 kb_empty); 
 
 
-lendo: process (clk) 
+lendo: process (clk, rst) 
 begin 
-if (clk'event and clk = '1') then 
-if (kb_empty = '1') then 
-rd_key_code <= '0'; 
-elsif (kb_empty = '0') then 
-tecla <= key_read; 
-key_saved <= key_read; 
-if ((gameover = '0') and (key_saved /= "01001101") and (key_saved /= 
-"01000101") and (key_saved /= "01001110") and (key_saved /= "01000111") and ( 
-key_saved /= "01001111")) then 
-contador <= contador -1; 
-end if; 
-rd_key_code <= '1'; 
-end if; 
-end if; 
-end process; 
-
-certo(4) <= '1' when (key_saved = "01001101" and gameover = '0'); 
-certo(3) <= '1' when (key_saved = "01000101" and gameover = '0'); 
-certo(2) <= '1' when (key_saved = "01001110" and gameover = '0'); 
-certo(1) <= '1' when (key_saved = "01000111" and gameover = '0'); 
-certo(0) <= '1' when (key_saved = "01001111" and gameover = '0'); 
+  if (rst = '1') then
+    rd_key_code <= '0';
+    certo <= "00000";
+    contador <= "1011"; -- Reseta contador para 11
+    key_saved <= (others => '0');
+    tecla <= (others => '0');
+      
+  elsif (clk'event and clk = '1') then 
+      
+    if (kb_empty = '1') then 
+      rd_key_code <= '0';
+    elsif (kb_empty = '0') then 
+      tecla <= key_read; 
+      key_saved <= key_read;
+        
+      -- Lógica de acertos e erros (agora dentro do clock)
+      if (gameover = '0') then -- Só processa se o jogo estiver rolando
+        if (key_read = "01001101") then -- 'M'
+          certo(4) <= '1';
+        elsif (key_read = "01000101") then -- 'E'
+          certo(3) <= '1';
+        elsif (key_read = "01001110") then -- 'N'
+          certo(2) <= '1';
+        elsif (key_read = "01000111") then -- 'G'
+          certo(1) <= '1';
+        elsif (key_read = "01001111") then -- 'O'
+          certo(0) <= '1';
+        else 
+          -- Só decrementa se não for nenhuma das letras corretas
+          contador <= contador - 1;
+        end if;
+      end if;
+        
+      rd_key_code <= '1'; 
+    end if; 
+  end if; 
+end process;
 
 LCD_CMDS(18) <= "10"&X"4D" when (certo(4) = '1') else "10"&X"5F"; 
 LCD_CMDS(19) <= "10"&X"45" when (certo(3) = '1') else "10"&X"5F"; 
@@ -187,19 +194,11 @@ LCD_CMDS(14) <= "10"&X"55" when (gameover='1') else "10"&X"52";
 LCD_CMDS(15) <= "10"&X"20" when (gameover='1') else "10"&X"43"; 
 LCD_CMDS(16) <= "10"&X"20" when (gameover='1') else "10"&X"41"; 
 
-LCD_CMDS(9) <= "10"&X"47" when (gameover='1' and LCD_CMDS(24) /= "10"&X"30") 
-else 
-"10"&X"50" when (gameover='1' and LCD_CMDS(24) = "10"&X"30"); 
-LCD_CMDS(10) <= "10"&X"41" when (gameover='1' and LCD_CMDS(24) /= "10"&X"30") 
-else 
-"10"&X"45" when (gameover='1' and LCD_CMDS(24) = "10"&X"30"); 
-LCD_CMDS(11) <= "10"&X"4E" when (gameover='1' and LCD_CMDS(24) /= "10"&X"30") 
-else 
-"10"&X"52" when (gameover='1' and LCD_CMDS(24) = "10"&X"30"); 
-LCD_CMDS(12) <= "10"&X"48" when (gameover='1' and LCD_CMDS(24) /= "10"&X"30") 
-else 
-"10"&X"44" when (gameover='1' and LCD_CMDS(24) = "10"&X"30"); 
-LCD_CMDS(13) <= "10"&X"45" when (gameover='1' and LCD_CMDS(24) = "10"&X"30"); 
+LCD_CMDS(9)  <= "10"&X"47" when (gameover = '1' and certo = "11111") else "10"&X"50"; -- G / P
+LCD_CMDS(10) <= "10"&X"41" when (gameover = '1' and certo = "11111") else "10"&X"45"; -- A / E
+LCD_CMDS(11) <= "10"&X"4E" when (gameover = '1' and certo = "11111") else "10"&X"52"; -- N / R
+LCD_CMDS(12) <= "10"&X"48" when (gameover = '1' and certo = "11111") else "10"&X"44"; -- H / D
+LCD_CMDS(13) <= "10"&X"4F" when (gameover = '1' and certo = "11111") else "10"&X"45"; -- O / E
 
 process (CLK)
 begin
@@ -412,40 +411,22 @@ process (stCurW, activateW)
 begin 
 
 case stCurW is 
---This sends the address across the bus telling the DIO5 that we are 
---writing to the LCD, in this configuration the adr_lcd(2) controls the 
---enable pin on the LCD 
-when stRw => 
-LCD_E <= '0'; 
---CS <= '0'; 
---ADR2 <= '1'; 
---ADR1 <= '0'; 
-stNextW <= stEnable; 
+  when stRw => 
+    LCD_E <= '1'; -- Passo 2: Sobe o pulso 'Enable'
+    stNextW <= stEnable;
 
---This adds another clock onto the wait to make sure data is stable on 
---the bus before enable goes low. The lcd has an active falling edge 
---and will write on the fall of enable 
-when stEnable => 
-LCD_E <= '0'; 
---CS <= '0'; 
---ADR2 <= '0'; 
---ADR1 <= '0'; 
-stNextW <= stIdle; 
+  when stEnable => 
+    LCD_E <= '0'; -- Passo 3: Desce o pulso 'Enable'. (O LCD lê os dados aqui)
+    stNextW <= stIdle;
 
---Waiting for the write command from the instuction state machine 
-when stIdle => 
---ADR2 <= '0'; 
---ADR1 <= '0'; 
---CS <= '1'; 
-LCD_E <= '1'; 
-if activateW = '1' then 
- 
-
-stNextW <= stRw; 
-else 
-stNextW <= stIdle; 
-end if; 
+  when stIdle => 
+    LCD_E <= '0'; -- Passo 1: O 'Enable' fica em nível baixo por padrão
+    if activateW = '1' then 
+      stNextW <= stRw; 
+    else 
+      stNextW <= stIdle;
+    end if; 
 end case; 
-end process; 
+end process;
 
 end Behavioral;
