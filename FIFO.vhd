@@ -43,7 +43,7 @@ wr_en <= wr and (not full_reg);
 --================================================= 
 -- fifo control logic 
 --================================================= 
-5 
+
 -- register for read and write pointers 
 process(clk,reset) 
 begin 
